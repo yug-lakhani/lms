@@ -50,4 +50,4 @@ export const clerkWebhooks = async (req, res) => {
     }catch(error){
         res.json({success:false, error: error.message})
     }
-}
+} 
