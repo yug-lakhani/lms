@@ -13,10 +13,13 @@ await connectDB();
 // CORS can be global
 app.use(cors());
 
-app.use(express.json());
 
 
 // IMPORTANT: use raw body parser only for the webhook route
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.post("/clerk", bodyParser.raw({ type: "application/json" }), clerkWebhooks);
 
 
