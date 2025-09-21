@@ -5,19 +5,24 @@ import User from "../models/User.js";
 
 export const clerkWebhooks = async (req, res) => {
     try{
-        const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
+        const payload = req.body.toString("utf8");
 
-        await whook.verify(JSON.stringify(req.body), {
-            'svix-id': req.headers['svix-id'],
-            'svix-timestamp': req.headers['svix-timestamp'],
-            'svix-signature': req.headers['svix-signature']
-        });
+    // headers from Clerk
+    const headers = {
+      "svix-id": req.headers["svix-id"],
+      "svix-timestamp": req.headers["svix-timestamp"],
+      "svix-signature": req.headers["svix-signature"],
+    };
+
+    // verify signature
+    const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
+    const evt = await whook.verify(payload, headers);
 
 
         const {data, type} = req.body;
 
         switch(type){
-            case "user.created": {
+            case 'user.created': {
                 const userData = {
                     _id: data.id,
                     email: data.email_addresses[0].email_address,
