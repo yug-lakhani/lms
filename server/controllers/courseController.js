@@ -1,5 +1,6 @@
 import Course from "../models/Course.js";
 
+
 // Get all Courses
 export const getAllCourses = async (req, res) => {
     try {
@@ -33,3 +34,5 @@ export const getCourseId = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 };
+
+
