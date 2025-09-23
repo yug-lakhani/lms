@@ -59,34 +59,48 @@ export const stripeWebhooks = async (request, response) => {
 
   switch (event.type) {
     case 'payment_intent.succeeded':{
-      const paymentIntent = event.data.object;
-      const paymentIntentId = paymentIntent.id;
+       const paymentIntent = event.data.object;
+    const paymentIntentId = paymentIntent.id;
 
-      const session = await stripeInstance.checkout.sessions.list({
-        payment_intent: paymentIntentId,
-      });
-      const {purchaseId} = session.data[0].metadata;
+    // 1. Get the session from Stripe
+    const session = await stripeInstance.checkout.sessions.list({
+      payment_intent: paymentIntentId,
+    });
 
-      const purchaseData = await Purchase.findById(purchaseId);
-      const userData = await User.findById(purchaseData.userId);
-      const courseData = await Course.findById(purchaseData.courseId.toString());
+    const { purchaseId } = session.data[0].metadata;
 
-      // ✅ Push userId as string into enrolledStudents
-  if (!courseData.enrolledStudents.includes(userData._id)) {
-    courseData.enrolledStudents.push(userData._id); // String
-    await courseData.save();
-  }
+    // 2. Load purchase, user, and course
+    const purchaseData = await Purchase.findById(purchaseId);
+    const userData = await User.findById(purchaseData.userId);
+    const courseData = await Course.findById(purchaseData.courseId);
 
-  // ✅ Push courseId as ObjectId into enrolledCourses
-  if (!userData.enrolledCourses.includes(courseData._id)) {
-    userData.enrolledCourses.push(courseData._id); // ObjectId
-    await userData.save();
-  }
+    // Debugging
+    console.log("purchaseData:", purchaseData);
+    console.log("userData:", userData);
+    console.log("courseData:", courseData);
 
-      purchaseData.status = "completed";
-      await purchaseData.save();
-
+    if (!userData || !courseData) {
+      console.error("User or Course not found!");
       break;
+    }
+
+    // 3. Add user to course
+    if (!courseData.enrolledStudents.some(id => id.toString() === userData._id.toString())) {
+      courseData.enrolledStudents.push(userData._id); // user._id is string
+      await courseData.save();
+    }
+
+    // 4. Add course to user
+    if (!userData.enrolledCourses.some(id => id.toString() === courseData._id.toString())) {
+      userData.enrolledCourses.push(courseData._id); // course._id is ObjectId
+      await userData.save();
+    }
+
+    // 5. Update purchase status
+    purchaseData.status = "completed";
+    await purchaseData.save();
+
+    break;
     }
     case 'payment_intent.payment_failed':{
 
