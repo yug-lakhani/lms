@@ -17,14 +17,13 @@ await connectCloudinary();
 
 //Middlewares
 app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(clerkMiddleware())
 
 // 👇 Raw body ONLY for Clerk webhooks
 app.post("/clerk", express.raw({ type: "application/json" }), clerkWebhooks);
 
-// Other routes
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => res.send("API working"));
 app.use('/api/educator',express.json(),educatorRouter)
