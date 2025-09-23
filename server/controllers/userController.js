@@ -57,7 +57,8 @@ export const purchaseCourse = async (req,res) => {
 
         const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
         
-        const currency = process.env.CURRENCY.toLowerCase()
+        const currency = (process.env.CURRENCY || "usd").toLowerCase();
+
 
         //creating line items to for stripe
 
