@@ -19,11 +19,6 @@ await connectCloudinary();
 app.use(cors());
 app.use(clerkMiddleware())
 
-// Debug: log incoming requests (temporary)
-app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  next();
-});
 
 // 👇 Raw body ONLY for Clerk webhooks
 app.post("/clerk", express.raw({ type: "application/json" }), clerkWebhooks);
