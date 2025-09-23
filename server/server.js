@@ -23,6 +23,8 @@ app.use(clerkMiddleware())
 
 // 👇 Raw body ONLY for Clerk webhooks
 app.post("/clerk", express.raw({ type: "application/json" }), clerkWebhooks);
+app.post('/stripe',express.raw({type:'application/json'}),stripeWebhooks);
+
 
 // Other routes
 app.use(express.json());
@@ -32,7 +34,6 @@ app.use('/api/educator',express.json(),educatorRouter)
 app.use('/api/course',express.json(),courseRouter)
 app.use('/api/user',express.json(),userRouter)
 app.get("/", (req, res) => res.send("API working"));
-app.post('/stripe',express.raw({type:'application/json'}),stripeWebhooks);
 
 
 const PORT = process.env.PORT || 5000;
