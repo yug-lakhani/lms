@@ -71,11 +71,17 @@ export const stripeWebhooks = async (request, response) => {
       const userData = await User.findById(purchaseData.userId);
       const courseData = await Course.findById(purchaseData.courseId.toString());
 
-      courseData.enrolledStudents.push(userData);
-      await courseData.save();
+      // ✅ Push userId as string into enrolledStudents
+  if (!courseData.enrolledStudents.includes(userData._id)) {
+    courseData.enrolledStudents.push(userData._id); // String
+    await courseData.save();
+  }
 
-      userData.enrolledCourses.push(courseData._id);
-      await userData.save();
+  // ✅ Push courseId as ObjectId into enrolledCourses
+  if (!userData.enrolledCourses.includes(courseData._id)) {
+    userData.enrolledCourses.push(courseData._id); // ObjectId
+    await userData.save();
+  }
 
       purchaseData.status = "completed";
       await purchaseData.save();
