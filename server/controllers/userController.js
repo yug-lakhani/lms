@@ -4,14 +4,17 @@ import User from '../models/User.js';
 
 export const getUserData = async (req, res) => {
     try {
+        if (!req.auth || !req.auth.userId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
         const userId = req.auth.userId; 
         const user = await User.findById(userId); 
         if (!user) {
-            return res.json({success:false, message: "User not found" });
+            return res.status(404).json({success:false, message: "User not found" });
         }
         res.json({success:true, user });
     } catch (error) {
-        return res.json({ success:false, message: error.message });
+        return res.status(500).json({ success:false, message: error.message });
     }
 };
 
