@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import { clerkClient } from '@clerk/express';
 import Stripe from 'stripe';
 import { Purchase } from '../models/Purchase.js';
 import Course from '../models/Course.js';
@@ -9,13 +10,26 @@ import { CourseProgress } from '../models/CourseProgress.js';
 
 export const getUserData = async (req, res) => {
     try {
-        const userId = req.auth.userId;
-
-        const user = await User.findOne({ _id: userId });
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found" });
+        const userId = req.auth().userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
         }
-        res.json({ success: true, user });
+
+        let user = await User.findById(userId);
+        if (!user) {
+            // Fallback: fetch from Clerk and create user record
+            const clerkUser = await clerkClient.users.getUser(userId);
+            const primaryEmail = clerkUser?.emailAddresses?.[0]?.emailAddress || null;
+            const name = `${clerkUser?.firstName || ''} ${clerkUser?.lastName || ''}`.trim();
+
+            user = await User.create({
+                _id: userId,
+                email: primaryEmail,
+                name,
+                imageUrl: clerkUser?.imageUrl || null,
+            });
+        }
+        return res.json({ success: true, user });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
@@ -25,7 +39,10 @@ export const getUserData = async (req, res) => {
 // Users Enrolled Courses with Lecture Links
 export const userEnrolledCourses = async (req, res) => {
     try {
-        const userId = req.auth.userId;
+        const userId = req.auth?.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
         const userData = await User.findById(userId).populate('enrolledCourses');
 
         res.json({success:true, enrolledCourses: userData.enrolledCourses });

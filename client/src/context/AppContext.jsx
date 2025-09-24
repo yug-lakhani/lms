@@ -52,6 +52,7 @@ export const AppContextProvider = (props) =>{
 
         try {
             const token = await getToken();
+            console.log(token);
 
             const {data} = await axios.get(backendURL + '/api/user/data', {
                 headers: {
