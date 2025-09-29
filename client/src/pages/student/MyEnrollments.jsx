@@ -1,32 +1,53 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useContext,useState } from 'react'
 import { AppContext } from '../../context/AppContext';
 import { assets } from '../../assets/assets';
 import {Line} from 'rc-progress'
 import Footer from '../../components/student/Footer'
+import { data } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import axios from 'axios';
 
 const MyEnrollments = () => {
 
-  const { enrolledCourses, calculateCourseDuration,navigate } = useContext(AppContext);
+  const { enrolledCourses, calculateCourseDuration,navigate,userData,fetchUserEnrolledCourses,backendURL,getToken,
+    calculateNoOfLectures} = useContext(AppContext);
 
-  const [progressArray, setProgressArray] = useState([
-    {lectureCompleted: 4, totalLectures: 4},
-    {lectureCompleted: 5, totalLectures: 10},
-    {lectureCompleted: 1, totalLectures: 3},
-    {lectureCompleted: 3, totalLectures: 6},
-    {lectureCompleted: 0, totalLectures: 2},
-    {lectureCompleted: 2, totalLectures: 4},
-    {lectureCompleted: 5, totalLectures: 10},
-    {lectureCompleted: 1, totalLectures: 3},
-    {lectureCompleted: 3, totalLectures: 6},
-    {lectureCompleted: 0, totalLectures: 2},
-    {lectureCompleted: 2, totalLectures: 4},
-    {lectureCompleted: 5, totalLectures: 10},
-    {lectureCompleted: 1, totalLectures: 3},
-    {lectureCompleted: 3, totalLectures: 6}
-    
+  const [progressArray, setProgressArray] = useState([]);
 
-  ]);
+  const getCourseProgress = async () => {
+    try {
+      const token = await getToken();
+      const tempProgressArray = await Promise.all(enrolledCourses.map(async (course) => {
+        const { data } = await axios.post(`${backendURL}/api/user/get-course-progress`,{courseId: course._id},{
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+          
+        })
+          let totalLectures = calculateNoOfLectures(course);
+          const lectureCompleted = data.progressData ? data.progressData.lecturesCompleted.length : 0;
+          return { totalLectures, lectureCompleted };
+      }));
+
+      setProgressArray(tempProgressArray);
+
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }
+
+  useEffect(() => {
+      if(userData){
+        fetchUserEnrolledCourses();
+      }
+  }, [userData]);
+
+  useEffect(() => {
+      if(enrolledCourses.length > 0){
+        getCourseProgress();
+      }
+  }, [enrolledCourses]);
 
   return (
     <>

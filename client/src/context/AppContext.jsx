@@ -45,14 +45,13 @@ export const AppContextProvider = (props) =>{
     //Fetch User Data
     const fetchUserData = async () => {
 
-        if(user.publicMetadata.role === 'educator'){
+        if(user?.publicMetadata?.role === 'educator'){
             setIsEducator(true);
         }
 
-
         try {
-            const token = await getToken();
-            console.log(token);
+            // Retry getting token briefly to avoid race condition on initial mount
+            let token = await getToken();
 
             const {data} = await axios.get(backendURL + '/api/user/data', {
                 headers: {
@@ -67,6 +66,7 @@ export const AppContextProvider = (props) =>{
             }
 
         }catch(error){
+
             toast.error(error.message);
         }
     };
@@ -119,7 +119,13 @@ export const AppContextProvider = (props) =>{
 
     const fetchUserEnrolledCourses = async () => {
         try{
-            const token = await getToken();
+            let token = await getToken();
+            if (!token) {
+                await new Promise(r => setTimeout(r, 300));
+                token = await getToken();
+            }
+            if (!token) return;
+
             const {data} = await axios.get(backendURL+'/api/user/enrolled-courses',{
                 headers:{
                     Authorization: `Bearer ${token}`,
@@ -131,6 +137,7 @@ export const AppContextProvider = (props) =>{
                 toast.error(data.message);
             }
         }catch(error){
+
             toast.error(error.message);
         }
 };

@@ -12,15 +12,17 @@ export const getUserData = async (req, res) => {
     try {
         const userId = req.auth().userId;
         if (!userId) {
-            return res.status(401).json({ success: false, message: 'Unauthorized' });
+            return res.status(401).json({ success: false, message: "Unauthorized" });
         }
 
-        let user = await User.findById(userId);
+        // Try to find user in MongoDB
+        let user = await User.findById(userId).populate("enrolledCourses"); // ✅ populate full course data
+
         if (!user) {
-            // Fallback: fetch from Clerk and create user record
+            // If not found in Mongo, fetch from Clerk
             const clerkUser = await clerkClient.users.getUser(userId);
             const primaryEmail = clerkUser?.emailAddresses?.[0]?.emailAddress || null;
-            const name = `${clerkUser?.firstName || ''} ${clerkUser?.lastName || ''}`.trim();
+            const name = `${clerkUser?.firstName || ""} ${clerkUser?.lastName || ""}`.trim();
 
             user = await User.create({
                 _id: userId,
@@ -29,12 +31,12 @@ export const getUserData = async (req, res) => {
                 imageUrl: clerkUser?.imageUrl || null,
             });
         }
+
         return res.json({ success: true, user });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
 };
-
 
 // Users Enrolled Courses with Lecture Links
 export const userEnrolledCourses = async (req, res) => {
